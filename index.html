@@ -1,1 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web AR Cube App</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+        }
 
+        #start-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 40px;
+            font-size: 18px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+
+        #ar-container {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <button id="start-button">Start AR Experience</button>
+    <div id="ar-container"></div>
+
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/arjs@3.3.2/aframe/build/aframe-ar.js"></script>
+    <script>
+        const startButton = document.getElementById('start-button');
+        const arContainer = document.getElementById('ar-container');
+
+        startButton.addEventListener('click', () => {
+            startButton.style.display = 'none';
+            arContainer.style.display = 'block';
+
+            arContainer.innerHTML = `
+                <a-scene embedded arjs="sourceType: webcam;">
+                    <a-anchor hit-testing-enabled>
+                        <a-box position="0 0.05 0" color="#4CC3D9" shadow onclick="window.location.href='https://example.com';"></a-box>
+                    </a-anchor>
+                    <a-camera gps-camera="" position="0 0 0"></a-camera>
+                </a-scene>
+            `;
+        });
+    </script>
+</body>
+</html>
