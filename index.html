@@ -1,74 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web AR Cube App</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #000;
-        }
-
-        #start-button {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px 40px;
-            font-size: 18px;
-            background: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-        }
-
-        #ar-container {
-            display: none;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-    </style>
-</head>
-<body>
-    <button id="start-button">Start AR Experience</button>
-    <div id="ar-container"></div>
-
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!-- Ensure proper scaling on mobile devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simple Mobile Web AR</title>
+    <!-- Include A-Frame and AR.js libraries -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/arjs@3.3.2/aframe/build/aframe-ar.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        background: #000;
+      }
+      /* Style for the start button */
+      #startButton {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.5em;
+        padding: 10px 20px;
+        z-index: 2;
+      }
+      /* Initially hide the AR scene */
+      #arScene {
+        display: none;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Landing page start button -->
+    <button id="startButton">Start AR</button>
+
+    <!-- AR scene using AR.js; the attribute "trackingMethod: best" helps optimize tracking -->
+    <a-scene id="arScene" embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+      <!-- A simple ground plane (for visual reference) -->
+      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+      <!-- The cube. Tapping it will trigger a redirection -->
+      <a-box id="redirectCube" position="0 0.5 -4" rotation="0 45 0" color="#4CC3D9"></a-box>
+      <!-- Camera entity -->
+      <a-entity camera></a-entity>
+    </a-scene>
+
     <script>
-        if (typeof DeviceMotionEvent.requestPermission === 'function') {
-            DeviceMotionEvent.requestPermission().then(response => {
-                if (response === 'granted') {
-                    console.log('Motion access granted');
-                } else {
-                    alert('Motion access is required for AR.');
-                }
-            }).catch(console.error);
+      // When the start button is pressed, hide it, show the AR scene, and request fullscreen.
+      document.getElementById("startButton").addEventListener("click", function() {
+        this.style.display = "none";
+        var scene = document.getElementById("arScene");
+        scene.style.display = "block";
+        // Request fullscreen for a more immersive experience.
+        if (scene.requestFullscreen) {
+          scene.requestFullscreen();
+        } else if (scene.mozRequestFullScreen) { 
+          scene.mozRequestFullScreen();
+        } else if (scene.webkitRequestFullscreen) {
+          scene.webkitRequestFullscreen();
+        } else if (scene.msRequestFullscreen) {
+          scene.msRequestFullscreen();
         }
-        const startButton = document.getElementById('start-button');
-        const arContainer = document.getElementById('ar-container');
+      });
 
-        startButton.addEventListener('click', () => {
-            startButton.style.display = 'none';
-            arContainer.style.display = 'block';
-
-            arContainer.innerHTML = `
-                <a-scene embedded vr-mode-ui="enabled: false" renderer="antialias: true; alpha: true;" arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;">
-                    <a-anchor hit-testing-enabled>
-                        <a-box position="0 0.05 0" color="#4CC3D9" shadow onclick="window.location.href='https://example.com';"></a-box>
-                    </a-anchor>
-                    <a-camera gps-camera="" position="0 0 0"></a-camera>
-                </a-scene>
-            `;
-        });
+      // Add a click (tap) event listener to the cube.
+      document.getElementById("redirectCube").addEventListener("click", function() {
+        window.location.href = "https://example.com"; // Replace with your desired URL
+      });
     </script>
-</body>
+  </body>
 </html>
