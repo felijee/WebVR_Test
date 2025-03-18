@@ -2,15 +2,16 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>AR.js NFT Marker with Fullscreen & Logging</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AR.js NFT Marker with File Logging and Fullscreen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Enable web app mode on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <!-- A-Frame library -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <!-- AR.js for A-Frame with NFT support -->
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
     <style>
-      body,
-      html {
+      body, html {
         margin: 0;
         padding: 0;
         width: 100%;
@@ -35,8 +36,31 @@
     <!-- Fullscreen Toggle Button -->
     <button id="fullscreenButton">Go Fullscreen</button>
 
-    <a-scene embedded arjs="trackingMethod: best;">
-      <!-- NFT marker: use the base path "markers/customMarker" -->
+    <!-- Debug: Check that NFT marker files are accessible -->
+    <script>
+      const markerFiles = [
+        'markers/customMarker.iset',
+        'markers/customMarker.fset',
+        'markers/customMarker.fset3'
+      ];
+      markerFiles.forEach(file => {
+        fetch(file)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Failed to load: ' + file);
+            }
+            console.log(file + ' loaded successfully.');
+            return response.text();
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      });
+    </script>
+
+    <!-- AR.js Scene -->
+    <a-scene embedded arjs="trackingMethod: best; sourceType: webcam;">
+      <!-- NFT Marker: AR.js will load markers/customMarker.iset, .fset, and .fset3 -->
       <a-nft
         type="nft"
         url="markers/customMarker"
@@ -46,7 +70,7 @@
         smoothThreshold="5"
         id="nftMarker"
       >
-        <!-- AR Content: a red cube positioned above the marker -->
+        <!-- AR Content: A red cube -->
         <a-box position="0 0.5 0" material="color: red;"></a-box>
       </a-nft>
       <!-- Camera -->
@@ -54,21 +78,26 @@
     </a-scene>
 
     <script>
-      // Fullscreen toggle
+      // Fullscreen toggle functionality
       const fullscreenButton = document.getElementById("fullscreenButton");
       fullscreenButton.addEventListener("click", () => {
         if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch((err) => {
-            alert(
-              `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
-            );
-          });
+          document.documentElement.requestFullscreen()
+            .then(() => console.log("Entered fullscreen mode."))
+            .catch((err) => {
+              console.error("Error attempting to enable full-screen mode:", err);
+              alert(`Error: ${err.message}`);
+            });
         } else {
-          document.exitFullscreen();
+          document.exitFullscreen().then(() => console.log("Exited fullscreen mode."));
         }
       });
 
-      // Logging marker events
+      document.addEventListener("fullscreenchange", () => {
+        console.log("Fullscreen change. Currently fullscreen:", !!document.fullscreenElement);
+      });
+
+      // Log NFT marker events: marker found and lost
       window.addEventListener("load", () => {
         const nftMarker = document.getElementById("nftMarker");
         nftMarker.addEventListener("markerFound", () => {
