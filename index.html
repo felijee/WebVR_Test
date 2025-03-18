@@ -1,138 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <title>Simple WebAR Cube</title>
+    <meta charset="utf-8" />
+    <title>AR.js Cube Example</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Optional: add a favicon to remove the 404 error -->
-    <link rel="icon" href="favicon.ico" />
+    <!-- A-Frame library -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <!-- AR.js for A-Frame -->
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
     <style>
-      body {
+      body, html {
         margin: 0;
+        padding: 0;
         overflow: hidden;
+        width: 100%;
+        height: 100%;
       }
     </style>
   </head>
   <body>
-    <!-- Note: using type="module" to properly import ARButton and Three.js -->
-    <script type="module">
-      import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js';
-      import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/webxr/ARButton.js';
-
-      let camera, scene, renderer;
-      let controller;
-      let reticle;
-      let hitTestSource = null;
-      let hitTestSourceRequested = false;
-      let cubePlaced = false;
-      let cube;
-
-      init();
-      animate();
-
-      function init() {
-        // Create scene and camera.
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(
-          70,
-          window.innerWidth / window.innerHeight,
-          0.01,
-          20
-        );
-
-        // Create the renderer.
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.xr.enabled = true;
-        document.body.appendChild(renderer.domElement);
-
-        // Add basic lighting.
-        const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-        light.position.set(0.5, 1, 0.25);
-        scene.add(light);
-
-        // Create the cube (initially hidden).
-        const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-        const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
-        cube = new THREE.Mesh(geometry, material);
-        cube.visible = false;
-        scene.add(cube);
-
-        // Create a reticle to show where the cube can be placed.
-        reticle = new THREE.Mesh(
-          new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-          new THREE.MeshBasicMaterial({ color: 0xffffff })
-        );
-        reticle.matrixAutoUpdate = false;
-        reticle.visible = false;
-        scene.add(reticle);
-
-        // Add the AR button to start the AR session.
-        document.body.appendChild(
-          ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] })
-        );
-
-        // Set up the controller to handle the screen tap.
-        controller = renderer.xr.getController(0);
-        controller.addEventListener('select', onSelect);
-        scene.add(controller);
-
-        window.addEventListener('resize', onWindowResize, false);
-      }
-
-      function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      }
-
-      // When a tap (select event) is detected, place the cube at the reticle position.
-      function onSelect() {
-        if (reticle.visible && !cubePlaced) {
-          cube.position.setFromMatrixPosition(reticle.matrix);
-          cube.visible = true;
-          cubePlaced = true;
-        }
-      }
-
-      function animate() {
-        renderer.setAnimationLoop(render);
-      }
-
-      function render(timestamp, frame) {
-        if (frame) {
-          const referenceSpace = renderer.xr.getReferenceSpace();
-          const session = renderer.xr.getSession();
-
-          if (!hitTestSourceRequested) {
-            session.requestReferenceSpace('viewer').then((refSpace) => {
-              session.requestHitTestSource({ space: refSpace }).then((source) => {
-                hitTestSource = source;
-              });
-            });
-
-            session.addEventListener('end', () => {
-              hitTestSourceRequested = false;
-              hitTestSource = null;
-            });
-
-            hitTestSourceRequested = true;
-          }
-
-          if (hitTestSource) {
-            const hitTestResults = frame.getHitTestResults(hitTestSource);
-            if (hitTestResults.length) {
-              const hit = hitTestResults[0];
-              reticle.visible = true;
-              reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-            } else {
-              reticle.visible = false;
-            }
-          }
-        }
-        renderer.render(scene, camera);
-      }
-    </script>
+    <!--
+      The a-scene element below is configured with AR.js.
+      - The "arjs" attribute initializes AR.js with the webcam as the source.
+      - A marker is defined using the preset "hiro". When this marker is detected,
+        the cube (a red a-box) is rendered on top of it.
+    -->
+    <a-scene embedded arjs="sourceType: webcam;">
+      <!-- Define a marker (Hiro marker) -->
+      <a-marker preset="hiro">
+        <!-- A cube positioned slightly above the marker -->
+        <a-box position="0 0.5 0" material="color: red;"></a-box>
+      </a-marker>
+      <!-- A simple camera -->
+      <a-entity camera></a-entity>
+    </a-scene>
   </body>
 </html>
