@@ -4,49 +4,62 @@
     <meta charset="UTF-8" />
     <title>Simple WebAR Cube</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Three.js library -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
-    <!-- ARButton helper to enter AR mode -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/webxr/ARButton.js"></script>
+    <!-- Optional: add a favicon to remove the 404 error -->
+    <link rel="icon" href="favicon.ico" />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
   </head>
-  <body style="margin: 0; overflow: hidden;">
-    <script>
+  <body>
+    <!-- Note: using type="module" to properly import ARButton and Three.js -->
+    <script type="module">
+      import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js';
+      import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/webxr/ARButton.js';
+
       let camera, scene, renderer;
       let controller;
       let reticle;
       let hitTestSource = null;
       let hitTestSourceRequested = false;
       let cubePlaced = false;
-      let cube; // The cube that will be placed on the floor
+      let cube;
 
       init();
       animate();
 
       function init() {
-        // Create a scene and camera.
+        // Create scene and camera.
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+        camera = new THREE.PerspectiveCamera(
+          70,
+          window.innerWidth / window.innerHeight,
+          0.01,
+          20
+        );
 
-        // Set up the renderer.
+        // Create the renderer.
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // Add a hemisphere light for basic illumination.
+        // Add basic lighting.
         const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
         light.position.set(0.5, 1, 0.25);
         scene.add(light);
 
-        // Create the cube (initially not visible).
+        // Create the cube (initially hidden).
         const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
         const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
         cube = new THREE.Mesh(geometry, material);
         cube.visible = false;
         scene.add(cube);
 
-        // Create a reticle (a ring) to visualize the hit test result.
+        // Create a reticle to show where the cube can be placed.
         reticle = new THREE.Mesh(
           new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
           new THREE.MeshBasicMaterial({ color: 0xffffff })
@@ -55,10 +68,12 @@
         reticle.visible = false;
         scene.add(reticle);
 
-        // Create the AR button to start the AR session.
-        document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+        // Add the AR button to start the AR session.
+        document.body.appendChild(
+          ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] })
+        );
 
-        // Get the controller for the AR session.
+        // Set up the controller to handle the screen tap.
         controller = renderer.xr.getController(0);
         controller.addEventListener('select', onSelect);
         scene.add(controller);
@@ -72,7 +87,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
       }
 
-      // When the screen is tapped, place the cube if a surface has been detected.
+      // When a tap (select event) is detected, place the cube at the reticle position.
       function onSelect() {
         if (reticle.visible && !cubePlaced) {
           cube.position.setFromMatrixPosition(reticle.matrix);
