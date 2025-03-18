@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>AR.js Cube Example</title>
+    <title>AR.js Custom Image Marker Example</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- A-Frame library -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <!-- AR.js for A-Frame -->
+    <!-- AR.js for A-Frame with NFT support -->
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
     <style>
       body, html {
@@ -19,19 +19,25 @@
     </style>
   </head>
   <body>
-    <!--
-      The a-scene element below is configured with AR.js.
-      - The "arjs" attribute initializes AR.js with the webcam as the source.
-      - A marker is defined using the preset "hiro". When this marker is detected,
-        the cube (a red a-box) is rendered on top of it.
-    -->
-    <a-scene embedded arjs="sourceType: webcam;">
-      <!-- Define a marker (Hiro marker) -->
-      <a-marker preset="hiro">
-        <!-- A cube positioned slightly above the marker -->
+    <a-scene embedded arjs="trackingMethod: best;">
+      <!-- Use a-nft for NFT marker support -->
+      <!-- 
+           Replace "customMarker" with your marker's base file name.
+           For example, if your generated files are customMarker.fset, 
+           customMarker.fset3, and customMarker.iset, then the url should be "markers/customMarker".
+      -->
+      <a-nft
+        type="nft"
+        url="marker.iset"
+        smooth="true"
+        smoothCount="10"
+        smoothTolerance="0.01"
+        smoothThreshold="5"
+      >
+        <!-- AR content that appears when the marker is detected -->
         <a-box position="0 0.5 0" material="color: red;"></a-box>
-      </a-marker>
-      <!-- A simple camera -->
+      </a-nft>
+      <!-- Camera -->
       <a-entity camera></a-entity>
     </a-scene>
   </body>
