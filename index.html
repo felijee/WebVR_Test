@@ -2,14 +2,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>AR.js Custom Image Marker Example</title>
+    <title>AR.js Custom NFT Marker with Logging</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- A-Frame library -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <!-- AR.js for A-Frame with NFT support -->
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
     <style>
-      body, html {
+      body,
+      html {
         margin: 0;
         padding: 0;
         overflow: hidden;
@@ -20,25 +21,43 @@
   </head>
   <body>
     <a-scene embedded arjs="trackingMethod: best;">
-      <!-- Use a-nft for NFT marker support -->
+      <!-- Use a-nft for NFT marker tracking -->
       <!-- 
-           Replace "customMarker" with your marker's base file name.
-           For example, if your generated files are customMarker.fset, 
-           customMarker.fset3, and customMarker.iset, then the url should be "markers/customMarker".
+           Replace "markers/customMarker" with your marker files’ base name.
+           For example, if your files are named customMarker.iset, customMarker.fset, 
+           and customMarker.fset3, then use url="markers/customMarker".
       -->
       <a-nft
         type="nft"
-        url="marker.iset"
+        url="markers/customMarker"
         smooth="true"
         smoothCount="10"
         smoothTolerance="0.01"
         smoothThreshold="5"
+        id="nftMarker"
       >
-        <!-- AR content that appears when the marker is detected -->
+        <!-- AR content: a red cube -->
         <a-box position="0 0.5 0" material="color: red;"></a-box>
       </a-nft>
       <!-- Camera -->
       <a-entity camera></a-entity>
     </a-scene>
+
+    <script>
+      // Wait for the scene to load before attaching event listeners.
+      window.addEventListener("load", function () {
+        const nftMarker = document.querySelector("#nftMarker");
+
+        // Log when the marker is detected.
+        nftMarker.addEventListener("markerFound", function () {
+          console.log("Marker detected!");
+        });
+
+        // Log when the marker is lost.
+        nftMarker.addEventListener("markerLost", function () {
+          console.log("Marker lost!");
+        });
+      });
+    </script>
   </body>
 </html>
