@@ -1,77 +1,120 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <!-- Ensure proper scaling on mobile devices -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simple Mobile Web AR</title>
-    <!-- Include A-Frame and AR.js libraries -->
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        width: 100%;
-        height: 100%;
-        background: #000;
-      }
-      /* Style for the start button */
-      #startButton {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 1.5em;
-        padding: 10px 20px;
-        z-index: 2;
-      }
-      /* Initially hide the AR scene */
-      #arScene {
-        display: none;
-        position: absolute;
-        width: 100%;
-        height: 100%;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Landing page start button -->
-    <button id="startButton">Start AR</button>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WebAR Cube</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+    #enter-ar {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <button id="enter-ar">Enter AR</button>
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js';
+    import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/webxr/ARButton.js';
 
-    <!-- AR scene using AR.js; the attribute "trackingMethod: best" helps optimize tracking -->
-    <a-scene id="arScene" embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
-      <!-- A simple ground plane (for visual reference) -->
-      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
-      <!-- The cube. Tapping it will trigger a redirection -->
-      <a-box id="redirectCube" position="0 0.5 -4" rotation="0 45 0" color="#4CC3D9"></a-box>
-      <!-- Camera entity -->
-      <a-entity camera></a-entity>
-    </a-scene>
+    let camera, scene, renderer;
+    let controller;
+    let reticle;
+    let hitTestSource = null;
+    let hitTestSourceRequested = false;
 
-    <script>
-      // When the start button is pressed, hide it, show the AR scene, and request fullscreen.
-      document.getElementById("startButton").addEventListener("click", function() {
-        this.style.display = "none";
-        var scene = document.getElementById("arScene");
-        scene.style.display = "block";
-        // Request fullscreen for a more immersive experience.
-        if (scene.requestFullscreen) {
-          scene.requestFullscreen();
-        } else if (scene.mozRequestFullScreen) { 
-          scene.mozRequestFullScreen();
-        } else if (scene.webkitRequestFullscreen) {
-          scene.webkitRequestFullscreen();
-        } else if (scene.msRequestFullscreen) {
-          scene.msRequestFullscreen();
+    init();
+    function init() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.xr.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      // Add lighting
+      const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+      light.position.set(0.5, 1, 0.25);
+      scene.add(light);
+
+      // Reticle
+      const ringGeo = new THREE.RingGeometry(0.05, 0.06, 32).rotateX(-Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+      reticle = new THREE.Mesh(ringGeo, ringMat);
+      reticle.matrixAutoUpdate = false;
+      reticle.visible = false;
+      scene.add(reticle);
+
+      // Controller
+      controller = renderer.xr.getController(0);
+      controller.addEventListener('select', onSelect);
+      scene.add(controller);
+
+      // AR Button
+      document.getElementById('enter-ar').addEventListener('click', () => {
+        document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+      });
+
+      renderer.setAnimationLoop(render);
+    }
+
+    function onSelect() {
+      if (reticle.visible) {
+        const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+        const material = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.setFromMatrixPosition(reticle.matrix);
+        cube.quaternion.setFromRotationMatrix(reticle.matrix);
+        scene.add(cube);
+      }
+    }
+
+    function render(timestamp, frame) {
+      if (frame) {
+        const referenceSpace = renderer.xr.getReferenceSpace();
+        const session = renderer.xr.getSession();
+
+        if (!hitTestSourceRequested) {
+          session.requestReferenceSpace('viewer').then(space => {
+            session.requestHitTestSource({ space }).then(source => {
+              hitTestSource = source;
+            });
+          });
+
+          session.addEventListener('end', () => {
+            hitTestSourceRequested = false;
+            hitTestSource = null;
+          });
+
+          hitTestSourceRequested = true;
         }
-      });
 
-      // Add a click (tap) event listener to the cube.
-      document.getElementById("redirectCube").addEventListener("click", function() {
-        window.location.href = "https://example.com"; // Replace with your desired URL
-      });
-    </script>
-  </body>
+        if (hitTestSource) {
+          const hitTestResults = frame.getHitTestResults(hitTestSource);
+          if (hitTestResults.length > 0) {
+            const hit = hitTestResults[0];
+            const pose = hit.getPose(referenceSpace);
+            reticle.visible = true;
+            reticle.matrix.fromArray(pose.transform.matrix);
+          } else {
+            reticle.visible = false;
+          }
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
 </html>
